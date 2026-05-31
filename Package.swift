@@ -6,10 +6,12 @@ import PackageDescription
 //
 // Sub-spec #1: inventory schema (moto [environment] artifact type +
 // 3-layer addressing + agency-tenant entry shape).
+// Sub-spec #3: bridge unification (BridgeOpener + 4 verbs + doctor check).
 //
 // Spec: features/shi-env-inventory-schema-2026-05-31.md
+// Spec: features/shi-bridge-unification-2026-05-31.md
 // Umbrella: features/shi-env-umbrella-vision-2026-05-31.md
-// Plugin rule: BR-SEIS-11 — ALL source lives here, NEVER in shikki monorepo.
+// Plugin rule: BR-SEIS-11 / BR-SBU-11 — ALL source lives here, NEVER in shikki monorepo.
 
 let package = Package(
     name: "shi-env",
@@ -39,6 +41,12 @@ let package = Package(
             name: "ShiEnvTests",
             dependencies: ["ShiEnv"],
             path: "Tests/ShiEnvTests",
+            exclude: [
+                // Bridge/Fixtures duplicates are superseded by Fixtures/Bridge/
+                // These .md files live at Bridge/Fixtures/ (old layout) and are not
+                // used directly — tests create temp dirs at runtime.
+                "Bridge/Fixtures",
+            ],
             resources: [
                 .copy("Fixtures"),
             ]
