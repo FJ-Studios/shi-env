@@ -1,0 +1,25 @@
+# .moto — plugin identity manifest for shi-env
+# Schema: shi-moto-plugin-identity-v1
+# Spec: features/shi-env-inventory-schema-2026-05-31.md BR-SEIS-11
+# Per [[moto-is-the-distribution-layer-for-per-project-knowledge]]
+
+[plugin]
+id = "fj-studios/shi-env"
+display_name = "shi-env"
+version = "0.1.0"
+description = "Unified declarative deployment topology — inventory schema, inheritance, linter, and read-only verbs."
+author = "FJ-Studios"
+license = "MIT"
+repository = "gh:FJ-Studios/shi-env"
+entry_point = "ShiEnv"
+minimum_shikki_version = "0.1.0"
+profile_hint = ["desktop-default"]
+
+[plugin.capabilities]
+verbs = ["env"]
+sub_verbs = ["list", "show", "diff", "lint"]
+doctor_checks = ["inventory-generator-consistency"]
+
+[plugin.commands.env]
+description = "Manage deployment topology inventory (list / show / diff / lint environments)"
+sub_verbs = ["list", "show", "diff", "lint"]

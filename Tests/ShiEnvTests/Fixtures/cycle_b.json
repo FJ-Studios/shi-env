@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "addressing": {
+    "workspace": "test",
+    "project": "test",
+    "environment": "env-b"
+  },
+  "inherits_from": "env-a",
+  "provider": { "kind": "local", "host": "127.0.0.1" }
+}

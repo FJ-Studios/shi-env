@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "addressing": {
+    "workspace": "test",
+    "project": "test",
+    "environment": "bad-ports"
+  },
+  "provider": { "kind": "local", "host": "127.0.0.1" },
+  "services": {
+    "service-a": {
+      "ports": { "http": 8080 }
+    },
+    "service-b": {
+      "ports": { "http": 8080 }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "_comment": "Converted from obyw-one/local-dev.sh domain_map() hostname table.",
+  "_source_file": "obyw-one/local-dev.sh lines ~87-125 (def domain_map + dict literal)",
+  "_conversion_notes": [
+    "domain_map() maps prod → *.dev for local Caddy TLS (self-signed).",
+    "back.obyw.one → back.dev (PocketBase local).",
+    "Local provider: kind=local, host=127.0.0.1 (no SSH).",
+    "Ports match local-dev.sh comments: PB :8091, Caddy :8080/:8443.",
+    "No bridges needed — already loopback (inherits_from=prod overrides bridges={}).",
+    "No literal secrets — all secret refs use vault:// scheme. Linter: PASS."
+  ],
+  "version": 1,
+  "addressing": {
+    "workspace": "obyw-one",
+    "project": "obyw-one",
+    "environment": "local"
+  },
+  "inherits_from": "prod",
+  "provider": {
+    "kind": "local",
+    "host": "127.0.0.1"
+  },
+  "services": {
+    "pocketbase": {
+      "ports": { "http": 8091 },
+      "bridges": {},
+      "secrets_refs": {
+        "admin_password": "vault://obyw/pb-admin-local"
+      }
+    },
+    "caddy": {
+      "ports": { "http": 8080, "https": 8443 }
+    }
+  },
+  "observability_backbone": {
+    "kurma_endpoint": "http://localhost:3001/api"
+  },
+  "_host_mappings": {
+    "_note": "These host_mappings come from local-dev.sh domain_map(). They are generator outputs — not part of the manifest schema; listed here for traceability.",
+    "obyw.one": "obyw.dev",
+    "www.obyw.one": "www-obyw.dev",
+    "shikki.io": "shikki.dev",
+    "maya.fit": "maya.dev",
+    "back.obyw.one": "back.dev",
+    "status.obyw.one": "status.dev",
+    "vw.obyw.one": "vw.dev"
+  }
+}

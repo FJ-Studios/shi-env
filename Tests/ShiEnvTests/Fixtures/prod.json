@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "addressing": {
+    "workspace": "obyw-one",
+    "project": "obyw-one",
+    "environment": "prod"
+  },
+  "provider": {
+    "kind": "ovh-vps",
+    "host": "92.134.242.73",
+    "region": "fr-rbx",
+    "ssh": {
+      "user": "jeo",
+      "key_ref": "vault://obyw/deploy-ssh-key"
+    }
+  },
+  "services": {
+    "pocketbase": {
+      "image": "pocketbase@v0.22",
+      "ports": { "http": 8091 },
+      "bridges": {
+        "admin": {
+          "local_port": 9091,
+          "remote_port": 8091,
+          "auth": "ssh-key",
+          "open_path": "/_/",
+          "description": "PocketBase admin UI (blocked publicly via Caddy)"
+        }
+      },
+      "public_paths": ["/api/*"],
+      "blocked_paths": ["/_/*", "/"],
+      "secrets_refs": {
+        "admin_password": "vault://obyw/pb-admin"
+      },
+      "observability": {
+        "kurma_slug": "pocketbase-obyw-prod",
+        "probes": ["/api/health"]
+      },
+      "systemd": {
+        "unit": "pocketbase.service",
+        "user": "pocketbase"
+      },
+      "deps": [
+        { "service": "caddy" },
+        { "external": "restic-backup" }
+      ],
+      "backups": {
+        "restic_target": "vault://restic/obyw-exit-de",
+        "schedule": "event:on-update"
+      }
+    },
+    "caddy": {
+      "ports": { "http": 80, "https": 443 },
+      "config_generator": "caddyfile",
+      "upstream_services": ["pocketbase", "kuma", "vaultwarden"],
+      "secrets_refs": {
+        "tls_email": "vault://obyw/letsencrypt-email"
+      },
+      "observability": {
+        "kurma_slug": "caddy-obyw-prod"
+      }
+    },
+    "vaultwarden": {
+      "ports": { "http": 8093 },
+      "public_paths": ["/api/*", "/identity/*", "/notifications/*"],
+      "secrets_refs": {
+        "admin_token": "vault://obyw/vw-admin"
+      },
+      "observability": {
+        "kurma_slug": "vaultwarden-obyw-prod"
+      }
+    }
+  },
+  "agencies": [
+    {
+      "slug": "fj-studios",
+      "name": "FJ-Studios",
+      "type": "developer-studio",
+      "gh_org": "FJ-Studios",
+      "role": "source-only"
+    },
+    {
+      "slug": "obyw-one",
+      "name": "Obyw.one",
+      "type": "digital-agency",
+      "gh_org": "obyw-one",
+      "role": "source-and-ops"
+    }
+  ],
+  "clients": [
+    {
+      "slug": "sigma-analytics",
+      "source_agency": "fj-studios",
+      "operating_agency": "obyw-one",
+      "type": "agency-client",
+      "phase": "pending",
+      "scopes": ["landing", "propositions", "storybook", "app", "backend", "api"]
+    }
+  ],
+  "observability_backbone": {
+    "kurma_endpoint": "https://status.obyw.one/api",
+    "kurma_admin_token_ref": "vault://obyw/kurma-admin"
+  },
+  "secrets_broker": {
+    "endpoint": "https://vw.obyw.one",
+    "client_id_ref": "vault://obyw/vw-bw-client-id",
+    "client_secret_ref": "vault://obyw/vw-bw-client-secret"
+  }
+}

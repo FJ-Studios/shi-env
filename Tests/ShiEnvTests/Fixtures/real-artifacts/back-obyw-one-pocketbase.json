@@ -1,0 +1,62 @@
+{
+  "_comment": "Converted from obyw-one/sites.yml `back` entry + obyw-one/scripts/pb-admin.sh port table.",
+  "_source_files": [
+    "obyw-one/sites.yml (sites[slug=back] / clients[slug=sigma-analytics])",
+    "obyw-one/scripts/pb-admin.sh (LOCAL_PORT=9091, REMOTE_PORT=8091, HOST=92.134.242.73)"
+  ],
+  "_conversion_notes": [
+    "sites.yml declares back.obyw.one with block_paths=[/_/*] — mapped to blocked_paths.",
+    "pb-admin.sh prod-obyw case: LOCAL_PORT=9091 remote 8091 → bridges.admin.",
+    "pb-admin.sh prod-wabisabi case (8090) omitted — separate service entry would be added.",
+    "ssh user 'jeo' from pb-admin.sh DEPLOY_USER default.",
+    "SSH key literal path in pb-admin.sh replaced with vault:// ref (BR-SEIS-04).",
+    "No literal secrets — all secret refs use vault:// scheme. Linter: PASS."
+  ],
+  "version": 1,
+  "addressing": {
+    "workspace": "obyw-one",
+    "project": "obyw-one",
+    "environment": "prod"
+  },
+  "provider": {
+    "kind": "ovh-vps",
+    "host": "92.134.242.73",
+    "region": "fr-rbx",
+    "ssh": {
+      "user": "jeo",
+      "key_ref": "vault://obyw/deploy-ssh-key"
+    }
+  },
+  "services": {
+    "pocketbase": {
+      "ports": { "http": 8091 },
+      "bridges": {
+        "admin": {
+          "local_port": 9091,
+          "remote_port": 8091,
+          "auth": "ssh-key",
+          "open_path": "/_/",
+          "description": "PocketBase admin UI — blocked publicly via Caddy (/_/* → obyw.one redirect)"
+        }
+      },
+      "public_paths": ["/api/*"],
+      "blocked_paths": ["/_/*", "/"],
+      "secrets_refs": {
+        "admin_password": "vault://obyw/pb-admin"
+      },
+      "observability": {
+        "kurma_slug": "pocketbase-obyw-prod",
+        "probes": ["/api/health"]
+      }
+    }
+  },
+  "observability_backbone": {
+    "kurma_endpoint": "https://status.obyw.one/api",
+    "kurma_admin_token_ref": "vault://obyw/kurma-admin"
+  },
+  "secrets_broker": {
+    "endpoint": "https://vw.obyw.one",
+    "client_id_ref": "vault://obyw/vw-bw-client-id",
+    "client_secret_ref": "vault://obyw/vw-bw-client-secret"
+  }
+}
