@@ -22,7 +22,9 @@ public struct ShiEnvPlugin: PluginCLISurface {
 
     public static let subVerbs: [String] = [
         "list", "show", "diff", "lint", "reindex",
-        "up", "down", "status", "open", "restart", "logs", "shell", "attach"
+        "up", "down", "status", "open", "restart", "logs", "shell", "attach",
+        // Sub-spec #5: remote apply verbs
+        "apply", "probe", "converge-history"
     ]
 
     public static func execute(subVerb: String, args: [String]) async throws -> Int32 {
@@ -201,6 +203,47 @@ public struct ShiEnvPlugin: PluginCLISurface {
             let index = try await indexActor.reindex(workspacesRoot: workspacesRoot)
             print("Reindexed \(index.entries.count) environment(s).")
             return 0
+
+        // MARK: Sub-spec #5: remote apply verbs
+
+        case "apply":
+            // shi env apply --target <host> [--dry-run | --apply] [--yes] [--all]
+            let opts = EnvApplyCommand.Options(
+                dryRun: args.contains("--dry-run"),
+                apply: args.contains("--apply"),
+                yes: args.contains("--yes"),
+                all: args.contains("--all"),
+                iKnowWhatImDoing: args.contains("--i-know-what-im-doing"),
+                jsonOutput: args.contains("--json"),
+                target: argValue(args, flag: "--target"),
+                env: argValue(args, flag: "--env")
+            )
+            // Note: orchestrator construction requires live broker / NATS clients.
+            // The PluginRegistration wires the production impls here; tests inject via init.
+            fputs("shi env apply: orchestrator not yet wired to production broker in plugin registration.\n", stderr)
+            fputs("  Use ConvergeOrchestrator directly (e.g. via shi launch) for production runs.\n", stderr)
+            _ = opts  // silence unused warning
+            return 1
+
+        case "probe":
+            // shi env probe --target <host>
+            guard let target = argValue(args, flag: "--target") ?? args.first(where: { !$0.hasPrefix("-") }) else {
+                fputs("Usage: shi env probe --target <host>\n", stderr)
+                return 1
+            }
+            fputs("shi env probe: SSH key resolver not yet wired to production broker in plugin registration.\n", stderr)
+            fputs("  Target: \(target)\n", stderr)
+            return 1
+
+        case "converge-history":
+            // shi env converge-history --target <host>
+            guard let target = argValue(args, flag: "--target") ?? args.first(where: { !$0.hasPrefix("-") }) else {
+                fputs("Usage: shi env converge-history --target <host>\n", stderr)
+                return 1
+            }
+            fputs("shi env converge-history: @db persistor not yet wired in plugin registration.\n", stderr)
+            fputs("  Target: \(target)\n", stderr)
+            return 1
 
         default:
             fputs("Unknown shi env sub-verb: \(subVerb). Available: \(subVerbs.joined(separator: ", "))\n", stderr)

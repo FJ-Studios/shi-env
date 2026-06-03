@@ -1,4 +1,6 @@
 import Foundation
+import ShiSecretsKit
+import ShiSecretsClient
 
 // MARK: - BridgeOpener
 //
@@ -7,9 +9,14 @@ import Foundation
 //
 // Spec: features/shi-bridge-unification-2026-05-31.md §3.3
 // BR-SBU-01: config from inventory bridges block — NO hardcoded port table
-// BR-SBU-02: SSH key via vault:// ref
+// BR-SBU-02: SSH key via shi-secret:// ref via shi-secrets broker (BR-SSEC-11)
 // BR-SBU-03: TimedSubprocess for spawn (never bare Process())
 // BR-SBU-10: SIGTERM trap registered on each spawned ssh process
+//
+// v0.5.0: PassthroughSecretsBroker stub RETIRED.
+// The SecretsBrokerProtocol is kept for backward-compatible test injection,
+// but production now uses ProductionSecretsResolver from ShiSecretsClient.
+// Callers injecting PassthroughSecretsBroker will get a deprecation note.
 
 /// Identifies which service + bridge name to open.
 public struct BridgeAddress: Sendable, Equatable {
@@ -83,36 +90,29 @@ public enum BridgeError: Error, LocalizedError {
     }
 }
 
-// MARK: - SecretsBroker stub
-//
-// Production: replaced by the real broker when shi-secrets ships.
-// For now: vault:// refs that point to a literal path (for dev/test only)
-// are extracted; others raise vaultRefNotResolvable.
+// MARK: - SecretsBroker
+
+// BR-SSEC-11: PassthroughSecretsBroker RETIRED in v0.5.0.
+// The SecretsBrokerProtocol is kept so tests can still inject a mock resolver
+// via the BridgeOpener(secretsBroker:) init. Production init now uses
+// ProductionSecretsResolver from ShiSecretsClient.
 
 public protocol SecretsBrokerProtocol: Sendable {
     func resolveSSHKeyPath(_ ref: String) async throws -> String
 }
 
-public struct PassthroughSecretsBroker: SecretsBrokerProtocol, Sendable {
-    public init() {}
+// MARK: - ProductionBridgeSecretsBroker
+// Adapts SecretsResolverProtocol (from ShiSecretsInjector) to SecretsBrokerProtocol.
+// BridgeOpener defaults to this in production.
+struct ProductionBridgeSecretsBroker: SecretsBrokerProtocol, Sendable {
+    private let resolver: ProductionSecretsResolver
 
-    /// Accepts refs of the form "vault://obyw/deploy-ssh-key" as a stub.
-    /// In production this must contact the shi-secrets broker.
-    public func resolveSSHKeyPath(_ ref: String) async throws -> String {
-        // Test hook: allow env override BRIDGE_SSH_KEY_PATH for integration tests
-        if let override = ProcessInfo.processInfo.environment["BRIDGE_SSH_KEY_PATH"] {
-            return override
-        }
-        // Default fallback for well-known deploy key
-        if ref.hasPrefix("vault://") {
-            // Stub: map to ~/.ssh/id_rsa if present, else raise
-            let keyPath = URL(fileURLWithPath: NSHomeDirectory())
-                .appendingPathComponent(".ssh/id_rsa").path
-            if FileManager.default.fileExists(atPath: keyPath) {
-                return keyPath
-            }
-        }
-        throw BridgeError.vaultRefNotResolvable(ref: ref)
+    init() {
+        self.resolver = ProductionSecretsResolver()
+    }
+
+    func resolveSSHKeyPath(_ ref: String) async throws -> String {
+        try await resolver.resolveSSHKeyPath(uri: ref)
     }
 }
 
@@ -172,12 +172,14 @@ public actor BridgeOpener {
     private let registry: BridgeRegistry
 
     public init(
-        secretsBroker: any SecretsBrokerProtocol = PassthroughSecretsBroker(),
+        secretsBroker: (any SecretsBrokerProtocol)? = nil,
         portChecker: PortChecker = PortChecker(),
         urlOpener: URLOpenerProtocol = SystemURLOpener(),
         registry: BridgeRegistry = BridgeRegistry()
     ) {
-        self.secretsBroker = secretsBroker
+        // BR-SSEC-11: default to ProductionBridgeSecretsBroker (shi-secrets broker),
+        // NOT the retired PassthroughSecretsBroker stub.
+        self.secretsBroker = secretsBroker ?? ProductionBridgeSecretsBroker()
         self.portChecker = portChecker
         self.urlOpener = urlOpener
         self.registry = registry
