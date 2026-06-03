@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "addressing": {
+    "workspace": "obyw-one",
+    "project": "obyw-one",
+    "environment": "prod"
+  },
+  "provider": {
+    "kind": "ovh-vps",
+    "host": "92.134.242.73",
+    "region": "fr-rbx",
+    "ssh": {
+      "user": "jeo",
+      "key_ref": "shi-secret://obyw/deploy-ssh-key"
+    }
+  },
+  "services": {
+    "pocketbase": {
+      "image": "pocketbase@v0.22",
+      "ports": { "http": 8091 },
+      "bridges": {
+        "admin": {
+          "local_port": 9091,
+          "remote_port": 8091,
+          "auth": "ssh-key",
+          "open_path": "/_/",
+          "description": "PocketBase admin UI"
+        }
+      },
+      "observability": {
+        "kurma_slug": "pocketbase-obyw-prod",
+        "probes": ["/api/health"]
+      }
+    },
+    "caddy": {
+      "ports": { "http": 80, "https": 443 },
+      "config_generator": "caddyfile"
+    }
+  },
+  "clients": [
+    {
+      "slug": "sigma-analytics",
+      "source_agency": "fj-studios",
+      "operating_agency": "obyw-one",
+      "type": "agency-client",
+      "phase": "pending",
+      "scopes": ["landing", "storybook", "backend", "api"]
+    },
+    {
+      "slug": "c-tech",
+      "source_agency": "fj-studios",
+      "operating_agency": "obyw-one",
+      "type": "agency-client",
+      "phase": "pending",
+      "scopes": ["landing", "app"]
+    }
+  ]
+}

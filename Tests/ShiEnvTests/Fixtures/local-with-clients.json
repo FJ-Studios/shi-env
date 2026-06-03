@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "addressing": {
+    "workspace": "obyw-one",
+    "project": "obyw-one",
+    "environment": "local"
+  },
+  "inherits_from": "prod",
+  "provider": {
+    "kind": "local",
+    "host": "127.0.0.1"
+  },
+  "services": {
+    "pocketbase": {
+      "image": "pocketbase@v0.21",
+      "ports": { "http": 8091 },
+      "bridges": {},
+      "secrets_refs": {
+        "admin_password": "shi-secret://obyw/pb-admin-local"
+      }
+    },
+    "caddy": {
+      "ports": { "http": 8080, "https": 8443 },
+      "config_generator": "caddyfile-local"
+    }
+  },
+  "clients": [
+    {
+      "slug": "sigma-analytics",
+      "source_agency": "fj-studios",
+      "operating_agency": "obyw-one",
+      "type": "agency-client",
+      "phase": "pending",
+      "scopes": ["landing", "propositions", "storybook", "app", "backend", "api"]
+    },
+    {
+      "slug": "c-tech",
+      "source_agency": "fj-studios",
+      "operating_agency": "obyw-one",
+      "type": "agency-client",
+      "phase": "pending",
+      "scopes": ["landing", "app"]
+    }
+  ]
+}
